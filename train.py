@@ -1,4 +1,4 @@
-from models import vgg
+from models import resnet
 import torch
 from load_datasets import CifarDataset
 from torchvision.transforms import transforms
@@ -10,9 +10,9 @@ class Trainer:
         lr = 1e-3
         self.epochs = 1000
         self.show_iter = 1
-        batch_size = 16
+        batch_size = 2
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model = vgg.VGG16().cuda() if self.device=="cuda" else vgg.VGG16()
+        self.model = resnet.Resnet18().cuda() if self.device=="cuda" else resnet.Resnet18()
         if self.device=="cuda":
             self.criterion = torch.nn.CrossEntropyLoss().cuda()
         else:
