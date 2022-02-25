@@ -1,8 +1,11 @@
 # pytorch-classification
 classification model in pytorch
 
-## Setting
+## Base Setting
 - Datasets: CIFAR100
+- Optimizer: SGD momentum 0.9
+- weight decay: 5e-4
+- lr scheduler: CosineAnnealingWarmupRestarter
 
 |model|test acc| 
 |:---:|:------:| 
