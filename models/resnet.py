@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Module
-from models.common import ConvBn
+from models.common import *
 from torchsummary import summary
 
 class ResBlock(Module):
@@ -10,11 +10,11 @@ class ResBlock(Module):
     def __init__(self, in_ch, out_ch, stride=1):
         super().__init__()
         expans_ch = out_ch * self.expansion
-        self.conv1 = ConvBn(in_ch, out_ch, stride=stride)
-        self.conv2 = ConvBn(out_ch, out_ch)
+        self.conv1 = BnConv(in_ch, out_ch, stride=stride)
+        self.conv2 = BnConv(out_ch, out_ch)
 
         if stride != 1 or in_ch != expans_ch:
-            self.residual = ConvBn(in_ch, expans_ch, kernel_size=1,
+            self.residual = BnConv(in_ch, expans_ch, kernel_size=1,
                                    stride=stride, padding=0)
         else:
             self.residual = nn.Sequential()
@@ -30,12 +30,12 @@ class ResBottleNeckBlock(Module):
     def __init__(self, in_ch, out_ch, stride=1):
         super().__init__()
         expans_ch = out_ch * self.expansion
-        self.conv1 = ConvBn(in_ch, out_ch, kernel_size=1, padding=0)
-        self.conv2 = ConvBn(out_ch, out_ch, kernel_size=3,stride=stride)
-        self.conv3 = ConvBn(out_ch, expans_ch, kernel_size=1, padding=0)
+        self.conv1 = BnConv(in_ch, out_ch, kernel_size=1, padding=0)
+        self.conv2 = BnConv(out_ch, out_ch, kernel_size=3,stride=stride)
+        self.conv3 = BnConv(out_ch, expans_ch, kernel_size=1, padding=0)
 
         if stride !=1 or in_ch != expans_ch:
-            self.residual = ConvBn(in_ch, expans_ch, kernel_size=1, stride=stride, padding=0)
+            self.residual = BnConv(in_ch, expans_ch, kernel_size=1, stride=stride, padding=0)
         else:
             self.residual = nn.Sequential()
 
@@ -52,8 +52,8 @@ class ResNet(Module):
         first_ch = 64
         self.tracking_ch = first_ch
 
-        '''head'''
-        self.conv1 = ConvBn(3, first_ch, kernel_size=7, stride=2, padding=3) # 16x16
+        '''Stem'''
+        self.conv1 = nn.Conv2d(3, first_ch, kernel_size=7, stride=2, padding=3)
         self.pool1 = nn.MaxPool2d(3, 2, padding=1) # 8x8
 
         '''body'''
@@ -61,6 +61,7 @@ class ResNet(Module):
         self.blocks2 = self.make_blocks(first_ch*2, num_blocks[1], stride=1)
         self.blocks3 = self.make_blocks(first_ch*4, num_blocks[2], stride=1)
         self.blocks4 = self.make_blocks(first_ch*8, num_blocks[3], stride=1)
+        self.bn = nn.BatchNorm2d(self.tracking_ch)
 
         '''fc layer'''
         self.gap = nn.AdaptiveAvgPool2d((1, 1))
@@ -75,16 +76,21 @@ class ResNet(Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        '''stem'''
         x = self.conv1(x)
-        # x = self.pool1(x)
+        x = self.pool1(x)
+
+        '''body'''
         x = self.blocks1(x)
         x = self.blocks2(x)
         x = self.blocks3(x)
         x = self.blocks4(x)
+        x = F.relu(self.bn(x))
+
+        '''head'''
         gap = self.gap(x)
         flat = gap.view(gap.size(0), -1)
-        fc = self.fc(flat)
-        out = F.softmax(fc, dim=1)
+        out = self.fc(flat)
         return out
 
 def Resnet18():
