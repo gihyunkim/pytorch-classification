@@ -10,9 +10,9 @@ class Trainer:
         lr = 1e-3
         self.epochs = 1000
         self.show_iter = 1
-        batch_size = 64
+        batch_size = 32
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model = resnet.Resnet18().cuda() if self.device=="cuda" else resnet.Resnet18()
+        self.model = resnet.Resnet50().cuda() if self.device=="cuda" else resnet.Resnet50()
         if self.device=="cuda":
             self.criterion = torch.nn.CrossEntropyLoss().cuda()
         else:

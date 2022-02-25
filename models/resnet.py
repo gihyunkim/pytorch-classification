@@ -53,14 +53,14 @@ class ResNet(Module):
         self.tracking_ch = first_ch
 
         '''head'''
-        self.conv1 = ConvBn(3, first_ch, kernel_size=7, stride=2, padding=3) # 16x16
-        self.pool1 = nn.MaxPool2d(3, 2, padding=1) # 8x8
+        self.conv1 = ConvBn(3, first_ch, kernel_size=7, stride=1, padding=3)
+        self.pool1 = nn.MaxPool2d(3, 2, padding=1)
 
         '''body'''
-        self.blocks1 = self.make_blocks(first_ch, num_blocks[0], stride=2)
+        self.blocks1 = self.make_blocks(first_ch, num_blocks[0], stride=1)
         self.blocks2 = self.make_blocks(first_ch*2, num_blocks[1], stride=1)
-        self.blocks3 = self.make_blocks(first_ch*4, num_blocks[2], stride=1)
-        self.blocks4 = self.make_blocks(first_ch*8, num_blocks[3], stride=1)
+        self.blocks3 = self.make_blocks(first_ch*4, num_blocks[2], stride=2)
+        self.blocks4 = self.make_blocks(first_ch*8, num_blocks[3], stride=2)
 
         '''fc layer'''
         self.gap = nn.AdaptiveAvgPool2d((1, 1))
@@ -103,4 +103,4 @@ def Resnet152():
     return ResNet(ResBottleNeckBlock, [3, 8, 36, 3])
 
 if __name__ == "__main__":
-    summary(Resnet18(), input_size=(3, 32, 32))
+    summary(Resnet18().cuda(), input_size=(3, 32, 32))
